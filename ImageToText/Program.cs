@@ -5,12 +5,14 @@
         static void Main(string[] args)
         {
             Console.WriteLine("Choose an Image Path.");
-
             string? imagePath = Console.ReadLine();
 
-            if(!string.IsNullOrEmpty(imagePath))
+            Console.WriteLine("Choose an Output Path.");
+            string? outputPath = Console.ReadLine();
+
+            if(!string.IsNullOrEmpty(imagePath) && !string.IsNullOrEmpty(outputPath))
             {
-                ImageTextEncoder.EncodeImageAsString(imagePath);
+                ImageTextEncoder.EncodeImageAsString(imagePath, outputPath);
             }
         }
     }
