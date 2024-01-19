@@ -20,72 +20,108 @@ namespace ImageToText
 
             stopwatch.Start();
 
-            using(StreamWriter writeText = new StreamWriter(@$"{OutputPath}\output.txt"))
-            using(Image<Rgba32> image = Image.Load<Rgba32>(ImagePath))
+            if(CheckPath(FileType.PNG, ImagePath) && Path.Exists(OutputPath))
             {
-                for(int h = 0; h < image.Height; h++) 
+                using (StreamWriter writeText = new StreamWriter(@$"{OutputPath}\output.txt"))
+                using (Image<Rgba32> image = Image.Load<Rgba32>(ImagePath))
                 {
-                    for(int w = 0; w < image.Width; w++) 
+                    for (int h = 0; h < image.Height; h++)
                     {
-                        Rgba32 pixelColor = image[w, h];
-
-                        byte red, green, blue, alpha;
-
-                        red = pixelColor.R;
-                        green = pixelColor.G;
-                        blue = pixelColor.B;
-                        alpha = pixelColor.A;
-
-                        byte[] colorChannelArray = { red, green, blue, alpha };
-
-                        writeText.WriteLine(Convert.ToHexString(colorChannelArray));
-                    }
-                }
-            }
-
-            stopwatch.Stop();
-
-            MessageBox.Show($"Image at {ImagePath} has been converted to text. Elapsed Time: {stopwatch.ElapsedMilliseconds} miliseconds", "Image Converted", MessageBoxButton.OK, MessageBoxImage.Information);
-
-            return string.Empty;
-        }
-
-        public static Image<Rgba32> DecodeImageAsString(string TextPath)
-        {
-            const int RED_OFFSET = 0, GREEN_OFFSET = 2, BLUE_OFFSET = 4, ALPHA_OFFSET = 6, HEX_LENGTH = 8;
-
-            using(StreamReader reader = new StreamReader(TextPath)) 
-            using(Image<Rgba32> Image = new Image<Rgba32>(128, 128))
-            {
-                byte[] colorArray = new byte[128^2];
-
-                for(int h = 0; h < 128; h++)
-                {
-                    for (int w = 0; w < 128; w++)
-                    {
-                        if(!string.IsNullOrEmpty(reader.ReadLine()))
+                        for (int w = 0; w < image.Width; w++)
                         {
-                            string? hexColor = reader.ReadLine();
+                            Rgba32 pixelColor = image[w, h];
 
-
-                            /*
                             byte red, green, blue, alpha;
 
-                            red = Encoding.ASCII.GetBytes(hexColor!.Substring(RED_OFFSET, HEX_LENGTH))[0];
-                            green = Encoding.ASCII.GetBytes(hexColor!.Substring(GREEN_OFFSET, HEX_LENGTH))[0];
-                            blue = Encoding.ASCII.GetBytes(hexColor!.Substring(BLUE_OFFSET, HEX_LENGTH))[0];
-                            alpha = Encoding.ASCII.GetBytes(hexColor!.Substring(ALPHA_OFFSET, HEX_LENGTH))[0];
-                            */
-                        }
+                            red = pixelColor.R;
+                            green = pixelColor.G;
+                            blue = pixelColor.B;
+                            alpha = pixelColor.A;
 
+                            byte[] colorChannelArray = { red, green, blue, alpha };
+
+                            writeText.WriteLine(Convert.ToHexString(colorChannelArray));
+                        }
                     }
                 }
 
-                return Image;
+                stopwatch.Stop();
+
+                MessageBox.Show($"Image at {ImagePath} has been converted to text. Elapsed Time: {stopwatch.ElapsedMilliseconds} miliseconds", "Image Converted", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                return string.Empty;
+            }
+            else
+            {
+                MessageBox.Show("One or more paths are not valid!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return string.Empty;
+            }
+
+        }
+
+        public static Image DecodeImageAsString(string TextPath, string OutputPath)
+        {
+            if(CheckPath(FileType.TXT ,TextPath) && Path.Exists(OutputPath))
+            {
+                const int RED_CHANNEL_OFFSET = 0, GREEN_CHANNEL_OFFSET = 2, BLUE_CHANNEL_OFFSET = 4, ALPHA_CHANNEL_OFFSET = 6, BYTE_LENGTH = 2;
+
+                const int IMAGE_WIDTH = 128, IMAGE_HEIGHT = 128;
+
+                using (StreamReader reader = new StreamReader(TextPath))
+                using (Image<Rgba32> Image = new Image<Rgba32>(128, 128))
+                {
+
+                    const int COLOR_ARRAY_SIZE = IMAGE_WIDTH * IMAGE_HEIGHT;
+
+                    byte[] colorArray = new byte[COLOR_ARRAY_SIZE];
+
+                    Stopwatch stopwatch = new Stopwatch();
+
+                    stopwatch.Start();
+
+                    for (int h = 0; h < IMAGE_HEIGHT; h++)
+                    {
+                        for (int w = 0; w < IMAGE_WIDTH; w++)
+                        {
+                            if (!string.IsNullOrEmpty(reader.ReadLine()))
+                            {
+                                string? hexColorString = reader.ReadLine();
+                                Rgba32 pixelColor;
+
+                                byte red, green, blue, alpha;
+
+                                red = Encoding.ASCII.GetBytes(hexColorString!.Substring(RED_CHANNEL_OFFSET, BYTE_LENGTH))[0];
+                                green = Encoding.ASCII.GetBytes(hexColorString!.Substring(GREEN_CHANNEL_OFFSET, BYTE_LENGTH))[0];
+                                blue = Encoding.ASCII.GetBytes(hexColorString!.Substring(BLUE_CHANNEL_OFFSET, BYTE_LENGTH))[0];
+                                alpha = Encoding.ASCII.GetBytes(hexColorString!.Substring(ALPHA_CHANNEL_OFFSET, BYTE_LENGTH))[0];
+
+                                pixelColor = new Rgba32(red, green, blue, alpha);
+
+                                Image[w, h] = pixelColor;
+                            }
+                        }
+                    }
+
+                    Image.Save(@$"{OutputPath}\output.png");
+
+                    stopwatch.Stop();
+
+                    MessageBox.Show($"Text file at {TextPath} has been converted to an Image. Elapsed Time: {stopwatch.ElapsedMilliseconds} miliseconds", "Text File Converted", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    return Image;
+                }
+               
+            }
+            else
+            {
+                MessageBox.Show("One or more paths are not valid!", "Error!", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return null;
             }
         }
 
-        private bool CheckPath(FileType fileType, string path)
+        internal static bool CheckPath(FileType fileType, string path)
         {
             string pathFileType = string.Empty;
 
@@ -98,6 +134,10 @@ namespace ImageToText
                 case FileType.TXT:
                     pathFileType = ".txt";
                     break;
+                default:
+                    pathFileType = string.Empty; 
+                    break;
+
             }
 
             return string.Compare(Path.GetExtension(path), pathFileType, StringComparison.OrdinalIgnoreCase) == 0;

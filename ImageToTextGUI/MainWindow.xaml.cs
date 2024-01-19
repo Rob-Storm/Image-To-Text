@@ -20,7 +20,7 @@ namespace ImageToTextGUI
 
         private void DecodeButton_Click(object sender, RoutedEventArgs e)
         {
-            //ImageElement.Source = ImageTextEncoder.DecodeImageAsString(FilePathTextBox.Text); 
+            ImageTextEncoder.DecodeImageAsString(FilePathTextBox.Text, OutputPathTextBox.Text);
         }
 
         private void EncodeButton_Click(object sender, RoutedEventArgs e)
